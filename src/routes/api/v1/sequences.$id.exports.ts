@@ -40,7 +40,7 @@ import {
   effectiveExportMusicUrl,
   hashSequenceExportInputs,
 } from '@/sequences/ui/theatre/source-shots-hash';
-import { collapseConsecutiveUrls } from '@/sequences/ui/theatre/playback-scenes';
+import { collapseConsecutiveUrls } from '@/sequences/ui/theatre/playback-clips';
 import { triggerWorkflow } from '@/platform/server/workflow/client';
 import type { SequenceExportWorkflowInput } from '@/platform/server/workflow/types';
 import { createFileRoute } from '@tanstack/react-router';

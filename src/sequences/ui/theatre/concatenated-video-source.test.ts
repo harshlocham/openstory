@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SceneInput } from './concatenated-video-source';
+import type { PlaybackClip } from './concatenated-video-source';
 
 const opened: { url: string; dispose: ReturnType<typeof vi.fn> }[] = [];
 const context = {
@@ -55,8 +55,8 @@ vi.doMock('./ranged-source', () => ({
 }));
 const { ConcatenatedVideoSource } = await import('./concatenated-video-source');
 const still = (
-  overrides: Partial<Extract<SceneInput, { imageUrl: string | null }>> = {}
-): SceneInput => ({
+  overrides: Partial<Extract<PlaybackClip, { imageUrl: string | null }>> = {}
+): PlaybackClip => ({
   orderIndex: 0,
   imageUrl: '/preview.png',
   fallbackImageUrl: '/thumbnail.png',
@@ -116,8 +116,8 @@ describe('mixed canvas timeline', () => {
       still({ orderIndex: 2, durationSeconds: 5 }),
     ]);
     expect(await source.prepare()).toMatchObject({
-      sceneOffsetsSeconds: [0, 4, 8],
-      sceneDurationsSeconds: [4, 4, 5],
+      clipOffsetsSeconds: [0, 4, 8],
+      clipDurationsSeconds: [4, 4, 5],
       totalDurationSeconds: 13,
       displayWidth: 1280,
       displayHeight: 720,
@@ -125,16 +125,16 @@ describe('mixed canvas timeline', () => {
     });
     expect(
       source
-        .getSceneAudioTracks()
-        .map(({ sceneIndex, sceneOffsetSeconds, isStill }) => ({
-          sceneIndex,
-          sceneOffsetSeconds,
+        .getClipAudioTracks()
+        .map(({ clipIndex, clipOffsetSeconds, isStill }) => ({
+          clipIndex,
+          clipOffsetSeconds,
           isStill,
         }))
     ).toEqual([
-      { sceneIndex: 0, sceneOffsetSeconds: 0, isStill: false },
-      { sceneIndex: 1, sceneOffsetSeconds: 4, isStill: true },
-      { sceneIndex: 1, sceneOffsetSeconds: 6, isStill: true },
+      { clipIndex: 0, clipOffsetSeconds: 0, isStill: false },
+      { clipIndex: 1, clipOffsetSeconds: 4, isStill: true },
+      { clipIndex: 1, clipOffsetSeconds: 6, isStill: true },
     ]);
     const frames = [];
     for await (const frame of source.canvases(5)) frames.push(frame.timestamp);

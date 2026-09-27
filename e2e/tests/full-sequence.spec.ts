@@ -484,6 +484,7 @@ SUPER:  CORAL.  OUT NOW.
       await expect(
         theatrePlayer.getByRole('button', { name: 'Play' })
       ).toBeVisible();
+      await expect(page.getByText(/Loading scene \d+ of/)).toHaveCount(0);
 
       // 14. Thin DB sanity tail: a UI bug that silently hides a player
       //     mustn't make the test pass green. We've already proved every

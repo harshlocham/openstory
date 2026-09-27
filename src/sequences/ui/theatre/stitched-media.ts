@@ -13,8 +13,8 @@
  */
 
 import type { Video } from '@videojs/media';
-import type { SceneInput } from './concatenated-video-source';
-import { scenePlaybackKey } from './playback-scenes';
+import type { PlaybackClip } from './concatenated-video-source';
+import { playbackClipsKey } from './playback-clips';
 import { SequencePlayerEngine, type SequencePlayerMeta } from './playback';
 import type { PlayAttemptResult } from './play-attempt';
 
@@ -24,20 +24,20 @@ const HAVE_CURRENT_DATA = 2;
 const HAVE_ENOUGH_DATA = 4;
 
 export type StitchedSequenceSource = {
-  scenes: SceneInput[];
+  clips: PlaybackClip[];
   musicUrl: string | null;
   musicLoudnessGainDb: number | null;
   musicEnabled?: boolean;
 };
 
 export type StitchedSequenceMediaListeners = {
-  onLoadProgress?: (loadedScenes: number, totalScenes: number) => void;
+  onLoadProgress?: (loadedClips: number, totalClips: number) => void;
   onMeta?: (meta: SequencePlayerMeta) => void;
   onError?: (error: Error) => void;
 };
 
 function stitchedSourceIdentity(source: StitchedSequenceSource): string {
-  return `${scenePlaybackKey(source.scenes)}\0${source.musicUrl ?? ''}\0${source.musicLoudnessGainDb ?? ''}`;
+  return `${playbackClipsKey(source.clips)}\0${source.musicUrl ?? ''}\0${source.musicLoudnessGainDb ?? ''}`;
 }
 
 export class StitchedSequenceMedia
@@ -300,7 +300,7 @@ export class StitchedSequenceMedia
     this.#resetPlaybackState();
     const canvas = this.#canvas;
     const source = this.#source;
-    if (!canvas || !source || source.scenes.length === 0) return;
+    if (!canvas || !source || source.clips.length === 0) return;
 
     this.#src = stitchedSourceIdentity(source);
     this.#emit('emptied');
@@ -308,7 +308,7 @@ export class StitchedSequenceMedia
 
     const engine = new SequencePlayerEngine({
       canvas,
-      scenes: source.scenes,
+      clips: source.clips,
       musicUrl: source.musicUrl,
       musicLoudnessGainDb: source.musicLoudnessGainDb,
       musicEnabled: source.musicEnabled ?? true,

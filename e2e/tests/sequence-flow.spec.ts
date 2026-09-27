@@ -409,3 +409,56 @@ testWithUser.describe.skip('Empty States', () => {
     }
   );
 });
+
+testWithUser.describe('Theatre stitcher clip language (#1744)', () => {
+  let testSequence: TestSequence;
+
+  testWithUser.beforeEach(async ({ page, testUser }) => {
+    await setupMockRoutes(page);
+    testSequence = await createTestSequence(
+      testUser.teamId,
+      testUser.id,
+      `E2E Theatre Clip Language ${crypto.randomUUID().slice(0, 8)}`
+    );
+    await createTestShot(testSequence.id, 0, {
+      thumbnailUrl:
+        'http://localhost:3020/api/test/image?w=1024&h=576&label=thumb',
+    });
+  });
+
+  testWithUser.afterEach(async () => {
+    await cleanupSequenceById(testSequence.id, testSequence.styleId);
+  });
+
+  testWithUser('stitches stills as clips, not scenes', async ({ page }) => {
+    testWithUser.setTimeout(60_000);
+    await page.goto(`/sequences/${testSequence.id}/scenes`);
+    await expect(
+      page.getByRole('heading', { name: testSequence.title })
+    ).toBeVisible({ timeout: 15_000 });
+
+    const theatrePlayer = page.getByTestId('sequence-player');
+    await expect(theatrePlayer).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/Loading scene \d+ of/)).toHaveCount(0);
+
+    await expect
+      .poll(
+        async () => {
+          const loading = await theatrePlayer.textContent();
+          if (loading?.includes('Loading scene')) {
+            throw new Error(`Theatre still uses scene copy: ${loading}`);
+          }
+          return (await theatrePlayer.getAttribute('data-state')) === 'ready';
+        },
+        {
+          timeout: 30_000,
+          message:
+            'theatre stitcher: sequence-player ready without “Loading scene”',
+        }
+      )
+      .toBe(true);
+
+    await expect(page.getByTestId('theatre-local-preview')).toBeVisible();
+    await expect(page.getByText(/Loading scene \d+ of/)).toHaveCount(0);
+  });
+});

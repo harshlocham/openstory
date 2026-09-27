@@ -10,7 +10,7 @@ import {
   listSequenceExportsFn,
 } from '@/sequences/sequence-exports.fn';
 import { useShotsBySequence } from '@/shots/ui/use-shots';
-import { collapseConsecutiveUrls } from './playback-scenes';
+import { collapseConsecutiveUrls } from './playback-clips';
 import {
   effectiveExportMusicUrl,
   hashSequenceExportInputs,

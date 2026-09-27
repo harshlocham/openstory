@@ -46,7 +46,7 @@ const { StitchedSequenceMedia } = await import('./stitched-media');
 
 const meta: SequencePlayerMeta = {
   durationSeconds: 12,
-  sceneOffsetsSeconds: [0],
+  clipOffsetsSeconds: [0],
   displayWidth: 1920,
   displayHeight: 1080,
   hasAudio: true,
@@ -56,7 +56,7 @@ const meta: SequencePlayerMeta = {
 };
 
 const source = {
-  scenes: [{ orderIndex: 0, videoUrl: '/a.mp4', posterUrl: null }],
+  clips: [{ orderIndex: 0, videoUrl: '/a.mp4', posterUrl: null }],
   musicUrl: '/music.mp3' as string | null,
   musicLoudnessGainDb: null as number | null,
   musicEnabled: true,
@@ -255,7 +255,7 @@ describe('StitchedSequenceMedia source identity', () => {
     const media = await preparedMedia();
     media.setSource({
       ...source,
-      scenes: [{ orderIndex: 0, videoUrl: '/a.mp4', posterUrl: null }],
+      clips: [{ orderIndex: 0, videoUrl: '/a.mp4', posterUrl: null }],
     });
     expect(mocks.dispose).not.toHaveBeenCalled();
     expect(mocks.prepare).toHaveBeenCalledOnce();
@@ -277,7 +277,7 @@ describe('StitchedSequenceMedia source identity', () => {
     const media = await preparedMedia();
     media.setSource({
       ...source,
-      scenes: [
+      clips: [
         { orderIndex: 0, videoUrl: '/a.mp4', posterUrl: null },
         { orderIndex: 1, videoUrl: '/b.mp4', posterUrl: null },
       ],

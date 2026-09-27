@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { SequencePlayer } from './sequence-player';
-import type { SceneInput } from './concatenated-video-source';
+import type { PlaybackClip } from './concatenated-video-source';
 import videoUrl from '../../../../e2e/fixtures/test-video.mp4?url';
 
 // A PCM WAV like the dialogue section files; no provider URLs or live calls.
@@ -26,7 +26,7 @@ function dialogueFixture() {
   view.setUint32(40, 32000, true);
   return `data:audio/wav;base64,${btoa(String.fromCharCode(...bytes))}`;
 }
-const still: SceneInput = {
+const still: PlaybackClip = {
   orderIndex: 0,
   imageUrl: '/icon-512.png',
   fallbackImageUrl: null,
@@ -39,7 +39,7 @@ const meta = {
   title: 'Sequences/Sequence Player',
   component: SequencePlayer,
   args: {
-    scenes: [still],
+    clips: [still],
     aspectRatio: '16:9',
     musicUrl: null,
     musicLoudnessGainDb: null,
@@ -59,7 +59,7 @@ type Story = StoryObj<typeof meta>;
 export const Still: Story = {};
 export const Mixed: Story = {
   args: {
-    scenes: [
+    clips: [
       still,
       { orderIndex: 1, videoUrl, posterUrl: null },
       {
@@ -73,7 +73,7 @@ export const Mixed: Story = {
 };
 export const MissingImages: Story = {
   args: {
-    scenes: [
+    clips: [
       {
         ...still,
         imageUrl: '/missing.png',

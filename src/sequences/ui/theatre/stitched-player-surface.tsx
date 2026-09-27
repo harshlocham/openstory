@@ -13,7 +13,7 @@ import { createPlayer, useMediaInstance } from '@videojs/react';
 import { MinimalVideoSkin, videoFeatures } from '@videojs/react/video';
 import { useCallback, useEffect, useRef } from 'react';
 
-import type { SceneInput } from './concatenated-video-source';
+import type { PlaybackClip } from './concatenated-video-source';
 import type { SequencePlayerMeta } from './playback';
 import { StitchedSequenceMedia } from './stitched-media';
 
@@ -22,12 +22,12 @@ const getPlayer = () =>
   (playerSingleton ??= createPlayer({ features: videoFeatures }));
 
 type StitchedPlayerSurfaceProps = {
-  scenes: SceneInput[];
+  clips: PlaybackClip[];
   musicUrl: string | null;
   musicLoudnessGainDb: number | null;
   musicEnabled: boolean;
   autoPlay?: boolean;
-  onLoadProgress?: (loadedScenes: number, totalScenes: number) => void;
+  onLoadProgress?: (loadedClips: number, totalClips: number) => void;
   onMeta?: (meta: SequencePlayerMeta) => void;
   onLoadedMetadata?: (duration: number) => void;
   onTimeUpdate?: (currentTime: number) => void;
@@ -38,7 +38,7 @@ type StitchedPlayerSurfaceProps = {
 };
 
 const StitchedPlayerInner: React.FC<StitchedPlayerSurfaceProps> = ({
-  scenes,
+  clips,
   musicUrl,
   musicLoudnessGainDb,
   musicEnabled,
@@ -99,16 +99,16 @@ const StitchedPlayerInner: React.FC<StitchedPlayerSurfaceProps> = ({
 
   useEffect(() => {
     media.setSource({
-      scenes,
+      clips,
       musicUrl,
       musicLoudnessGainDb,
       musicEnabled,
     });
     // musicEnabled is in the payload but must not rebuild: setMusicEnabled
     // applies it live (#834). Clip-list identity is decided inside setSource
-    // (scenePlaybackKey + music URL/loudness), not by this array's identity.
+    // (playbackClipsKey + music URL/loudness), not by this array's identity.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [media, scenes, musicUrl, musicLoudnessGainDb]);
+  }, [media, clips, musicUrl, musicLoudnessGainDb]);
 
   useEffect(() => {
     media.setMusicEnabled(musicEnabled);

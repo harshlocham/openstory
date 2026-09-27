@@ -1,4 +1,4 @@
-import type { SceneInput } from './concatenated-video-source';
+import type { PlaybackClip } from './playback-clip';
 
 import type { ShotView } from '@/shots/shot-view';
 import {
@@ -20,8 +20,8 @@ type PlaybackShot = Pick<
 };
 
 /**
- * Shots per playback scene, in order. Adjacent shots that share a rendered
- * clip (a packed render, #1510) are one scene; every other shot is its own.
+ * Shots per playback clip, in order. Adjacent shots that share a rendered
+ * clip (a packed render, #1510) are one clip; every other shot is its own.
  */
 export function groupPlaybackShots<
   S extends { video: { url: string | null } | null },
@@ -37,11 +37,11 @@ export function groupPlaybackShots<
 }
 
 /** One continuous timeline: rendered clips where available, stills elsewhere. */
-export function toPlaybackScenes(
+export function toPlaybackClips(
   shots: readonly PlaybackShot[],
   aspectRatio: AspectRatio = '16:9'
-): SceneInput[] {
-  const scenes: SceneInput[] = [];
+): PlaybackClip[] {
+  const clips: PlaybackClip[] = [];
   for (const group of groupPlaybackShots(shots)) {
     const shot = group[0];
     if (!shot) continue;
@@ -49,14 +49,14 @@ export function toPlaybackScenes(
     const stillUrl = shot.image?.url ?? null;
     const previewUrl = shot.previewThumbnailUrl ?? null;
     if (videoUrl) {
-      scenes.push({
-        orderIndex: scenes.length,
+      clips.push({
+        orderIndex: clips.length,
         videoUrl,
         posterUrl: stillUrl ?? previewUrl,
       });
     } else {
-      scenes.push({
-        orderIndex: scenes.length,
+      clips.push({
+        orderIndex: clips.length,
         imageUrl: stillUrl ?? previewUrl,
         fallbackImageUrl:
           stillUrl && previewUrl && previewUrl !== stillUrl ? previewUrl : null,
@@ -69,7 +69,7 @@ export function toPlaybackScenes(
       });
     }
   }
-  return scenes;
+  return clips;
 }
 
 /**
@@ -86,31 +86,31 @@ export function collapseConsecutiveUrls(urls: readonly string[]): string[] {
 }
 
 /**
- * Identity of a stitched clip list (order + URLs). A new `SceneInput[]` of
+ * Identity of a stitched clip list (order + URLs). A new `PlaybackClip[]` of
  * the same clips (shots refetch while others generate) is not a new list (#1284).
  */
-export function scenePlaybackKey(scenes: readonly SceneInput[]): string {
+export function playbackClipsKey(clips: readonly PlaybackClip[]): string {
   return JSON.stringify(
-    scenes.map((scene) =>
-      'videoUrl' in scene
-        ? [scene.orderIndex, scene.videoUrl]
+    clips.map((clip) =>
+      'videoUrl' in clip
+        ? [clip.orderIndex, clip.videoUrl]
         : [
-            scene.orderIndex,
-            scene.imageUrl,
-            scene.fallbackImageUrl,
-            scene.durationSeconds,
-            scene.audioUrls,
-            scene.width,
-            scene.height,
+            clip.orderIndex,
+            clip.imageUrl,
+            clip.fallbackImageUrl,
+            clip.durationSeconds,
+            clip.audioUrls,
+            clip.width,
+            clip.height,
           ]
     )
   );
 }
 
 /**
- * Which shot the sequence player is on at `time` (#1771). Scene boundaries
+ * Which shot the sequence player is on at `time` (#1771). Clip boundaries
  * are the stitcher's measured offsets when it has them. Inside a packed
- * clip, shots split the scene in their own `durationMs` proportions, so a clip that came back a little
+ * clip, shots split the clip in their own `durationMs` proportions, so a clip that came back a little
  * longer than asked still lands on the right shot.
  */
 export function shotIdAtSequenceTime<
@@ -118,17 +118,17 @@ export function shotIdAtSequenceTime<
 >(
   shots: readonly S[],
   time: number,
-  /** The measured start of each playback scene, when known. */
-  sceneOffsetsSeconds?: readonly number[]
+  /** The measured start of each playback clip, when known. */
+  clipOffsetsSeconds?: readonly number[]
 ): string | undefined {
-  const scenes = groupPlaybackShots(shots).map((group) =>
+  const clips = groupPlaybackShots(shots).map((group) =>
     packedClipWindows(group)
   );
   let cursor = 0;
-  for (const [index, windows] of scenes.entries()) {
+  for (const [index, windows] of clips.entries()) {
     const estimated = windows.at(-1)?.endSeconds ?? 0;
-    const start = sceneOffsetsSeconds?.[index] ?? cursor;
-    const end = sceneOffsetsSeconds?.[index + 1] ?? start + estimated;
+    const start = clipOffsetsSeconds?.[index] ?? cursor;
+    const end = clipOffsetsSeconds?.[index + 1] ?? start + estimated;
     if (time < end) {
       const local =
         end > start ? ((time - start) / (end - start)) * estimated : 0;

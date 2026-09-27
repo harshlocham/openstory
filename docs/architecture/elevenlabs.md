@@ -438,7 +438,7 @@ Out of scope here: voice cloning from an uploaded sample, realtime/agents,
 auditioning/regenerating a single line from the scene panel.
 
 **Continuous preview playback (#1690).** The existing scene/sequence player
-includes every shot before rendering is complete. `toPlaybackScenes` uses
+includes every shot before rendering is complete. `toPlaybackClips` uses
 rendered clips where available and still entries elsewhere, preferring the
 selected still with the storyboard preview as fallback. A still plays its
 selected `shots.audioClips` and holds for their actual combined duration;

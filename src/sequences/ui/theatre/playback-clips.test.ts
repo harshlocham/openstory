@@ -1,16 +1,16 @@
 /**
- * `scenePlaybackKey` must stay stable when only non-URL shot fields change.
- * SequencePlayer used to depend on `scenes` identity; a shots refetch of the
+ * `playbackClipsKey` must stay stable when only non-URL shot fields change.
+ * SequencePlayer used to depend on `clips` identity; a shots refetch of the
  * same URLs disposed a playing engine (stuck at 0:00, #1284).
  */
 import { describe, expect, it } from 'vitest';
 
 import {
   groupPlaybackShots,
-  scenePlaybackKey,
+  playbackClipsKey,
   shotIdAtSequenceTime,
-  toPlaybackScenes,
-} from './playback-scenes';
+  toPlaybackClips,
+} from './playback-clips';
 
 const shot = (url: string | null, extra?: { status?: string }) => ({
   video: url ? { url, status: extra?.status } : null,
@@ -20,10 +20,10 @@ const shot = (url: string | null, extra?: { status?: string }) => ({
   audioClips: null,
 });
 
-describe('toPlaybackScenes', () => {
+describe('toPlaybackClips', () => {
   it('keeps completed clips and fills missing videos with timed stills', () => {
     expect(
-      toPlaybackScenes([shot('/a.mp4'), shot(null), shot('/c.mp4'), shot(null)])
+      toPlaybackClips([shot('/a.mp4'), shot(null), shot('/c.mp4'), shot(null)])
     ).toEqual([
       { orderIndex: 0, videoUrl: '/a.mp4', posterUrl: null },
       expect.objectContaining({
@@ -39,7 +39,7 @@ describe('toPlaybackScenes', () => {
 
   it('collapses consecutive packed-segment copies into one clip (#1510)', () => {
     expect(
-      toPlaybackScenes([
+      toPlaybackClips([
         shot('/packed.mp4'),
         shot('/packed.mp4'),
         shot('/b.mp4'),
@@ -51,42 +51,42 @@ describe('toPlaybackScenes', () => {
   });
 });
 
-describe('scenePlaybackKey', () => {
+describe('playbackClipsKey', () => {
   it('is identical for two shot lists that only differ in non-url fields', () => {
-    const a = toPlaybackScenes([
+    const a = toPlaybackClips([
       shot('/a.mp4', { status: 'completed' }),
       shot(null),
       shot('/c.mp4', { status: 'completed' }),
     ]);
-    const b = toPlaybackScenes([
+    const b = toPlaybackClips([
       shot('/a.mp4', { status: 'completed' }),
       shot(null, { status: 'generating' }),
       shot('/c.mp4', { status: 'completed' }),
     ]);
-    expect(scenePlaybackKey(a)).toBe(scenePlaybackKey(b));
+    expect(playbackClipsKey(a)).toBe(playbackClipsKey(b));
     expect(a).not.toBe(b);
   });
 
   it('changes when a new clip lands', () => {
-    const before = scenePlaybackKey(
-      toPlaybackScenes([shot('/a.mp4'), shot(null)])
+    const before = playbackClipsKey(
+      toPlaybackClips([shot('/a.mp4'), shot(null)])
     );
-    const after = scenePlaybackKey(
-      toPlaybackScenes([shot('/a.mp4'), shot('/b.mp4')])
+    const after = playbackClipsKey(
+      toPlaybackClips([shot('/a.mp4'), shot('/b.mp4')])
     );
     expect(before).not.toBe(after);
   });
 
   it('changes when a clip url is replaced', () => {
-    expect(scenePlaybackKey(toPlaybackScenes([shot('/a.mp4')]))).not.toBe(
-      scenePlaybackKey(toPlaybackScenes([shot('/a-v2.mp4')]))
+    expect(playbackClipsKey(toPlaybackClips([shot('/a.mp4')]))).not.toBe(
+      playbackClipsKey(toPlaybackClips([shot('/a-v2.mp4')]))
     );
   });
 });
 
 it('does not collapse rendered clips across a missing shot', () => {
   expect(
-    toPlaybackScenes([shot('/packed.mp4'), shot(null), shot('/packed.mp4')])
+    toPlaybackClips([shot('/packed.mp4'), shot(null), shot('/packed.mp4')])
   ).toHaveLength(3);
 });
 it('prefers the selected still and plays its recorded take only when there is no video', () => {
@@ -103,13 +103,13 @@ it('prefers the selected still and plays its recorded take only when there is no
       },
     ],
   };
-  expect(toPlaybackScenes([input])[0]).toMatchObject({
+  expect(toPlaybackClips([input])[0]).toMatchObject({
     imageUrl: '/still.png',
     fallbackImageUrl: '/preview.png',
     audioUrls: ['/take.wav'],
   });
   expect(
-    toPlaybackScenes([{ ...input, video: { url: '/render.mp4' } }])
+    toPlaybackClips([{ ...input, video: { url: '/render.mp4' } }])
   ).toEqual([
     { orderIndex: 0, videoUrl: '/render.mp4', posterUrl: '/still.png' },
   ]);
@@ -117,9 +117,7 @@ it('prefers the selected still and plays its recorded take only when there is no
 
 it('uses the preview when there is no selected still', () => {
   expect(
-    toPlaybackScenes([
-      { ...shot(null), previewThumbnailUrl: '/preview.png' },
-    ])[0]
+    toPlaybackClips([{ ...shot(null), previewThumbnailUrl: '/preview.png' }])[0]
   ).toMatchObject({
     imageUrl: '/preview.png',
     fallbackImageUrl: null,
@@ -127,7 +125,7 @@ it('uses the preview when there is no selected still', () => {
 });
 it('updates identity when a still, recording, duration or aspect ratio changes', () => {
   const input = { ...shot(null), image: { url: '/still.png' } };
-  const key = scenePlaybackKey(toPlaybackScenes([input]));
+  const key = playbackClipsKey(toPlaybackClips([input]));
   for (const changed of [
     { ...input, image: { url: '/new.png' } },
     { ...input, durationMs: 8000 },
@@ -138,9 +136,9 @@ it('updates identity when a still, recording, duration or aspect ratio changes',
       ],
     },
   ]) {
-    expect(scenePlaybackKey(toPlaybackScenes([changed]))).not.toBe(key);
+    expect(playbackClipsKey(toPlaybackClips([changed]))).not.toBe(key);
   }
-  expect(scenePlaybackKey(toPlaybackScenes([input], '9:16'))).not.toBe(key);
+  expect(playbackClipsKey(toPlaybackClips([input], '9:16'))).not.toBe(key);
 });
 
 describe('shotIdAtSequenceTime (#1771)', () => {
@@ -150,7 +148,7 @@ describe('shotIdAtSequenceTime (#1771)', () => {
     durationMs,
     video: url ? { url } : null,
   });
-  // Scenes: packed clip (s1 4s + s2 6s), still s3 (3s), clip s4 (5s).
+  // Clips: packed clip (s1 4s + s2 6s), still s3 (3s), clip s4 (5s).
   const shots = [
     timed('s1', '/packed.mp4', 4000),
     timed('s2', '/packed.mp4', 6000),
@@ -164,7 +162,7 @@ describe('shotIdAtSequenceTime (#1771)', () => {
     ).toEqual([['s1', 's2'], ['s3'], ['s4']]);
   });
 
-  it('splits a measured scene by the members’ own durations', () => {
+  it('splits a measured clip by the members’ own durations', () => {
     // The packed clip really runs 12s, the still 3s, the last clip 5.5s.
     const offsets = [0, 12, 15];
     expect(shotIdAtSequenceTime(shots, 0, offsets)).toBe('s1');

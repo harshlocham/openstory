@@ -24,8 +24,8 @@ import { Film } from 'lucide-react';
 import { useMemo } from 'react';
 import {
   shotIdAtSequenceTime,
-  toPlaybackScenes,
-} from '@/sequences/ui/theatre/playback-scenes';
+  toPlaybackClips,
+} from '@/sequences/ui/theatre/playback-clips';
 
 type SceneCanvasProps = {
   selection: SceneSelection;
@@ -93,8 +93,8 @@ export const SceneCanvas: React.FC<SceneCanvasProps> = ({
     [selection, shots]
   );
 
-  const playbackScenes = useMemo(
-    () => toPlaybackScenes(scopedShots, aspectRatio),
+  const playbackClips = useMemo(
+    () => toPlaybackClips(scopedShots, aspectRatio),
     [scopedShots, aspectRatio]
   );
   const draftLabel = useMemo(
@@ -185,7 +185,7 @@ export const SceneCanvas: React.FC<SceneCanvasProps> = ({
     );
   }
 
-  if (playbackScenes.length === 0) {
+  if (playbackClips.length === 0) {
     return (
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 py-16">
         <Film className="h-8 w-8 text-muted-foreground" />
@@ -204,7 +204,7 @@ export const SceneCanvas: React.FC<SceneCanvasProps> = ({
   return (
     <CanvasMediaStage aspectRatio={aspectRatio}>
       <SequencePlayer
-        scenes={playbackScenes}
+        clips={playbackClips}
         musicUrl={scope === 'sequence' ? (sequence.musicUrl ?? null) : null}
         musicLoudnessGainDb={null}
         musicEnabled={scope === 'sequence' ? sequence.includeMusic : false}
