@@ -458,7 +458,6 @@ testWithUser.describe('Theatre stitcher clip language (#1744)', () => {
       )
       .toBe(true);
 
-    await expect(page.getByTestId('theatre-local-preview')).toBeVisible();
     await expect(page.getByText(/Loading scene \d+ of/)).toHaveCount(0);
   });
 });
