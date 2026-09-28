@@ -2,7 +2,7 @@
  * Transmux-compatibility checks for stitched sequences.
  *
  * The export pipeline can concatenate encoded packets without re-encoding
- * ("transmux") only when every scene is AVC with a byte-identical decoder
+ * ("transmux") only when every clip is AVC with a byte-identical decoder
  * config (SPS/PPS). Mixed-model sequences (#791) usually violate this — a
  * different resolution implies a different SPS — and must take the
  * decode→normalize→re-encode path instead.
@@ -10,10 +10,10 @@
  * Like `resolution.ts`, this module is pure (no Mediabunny surface) so the
  * decision logic that gates a hard export failure vs. a silent slow re-encode
  * can be unit-tested in isolation. `ConcatenatedVideoSource` probes each
- * scene's codec + decoder config and feeds the results here.
+ * clip's codec + decoder config and feeds the results here.
  */
 
-export type SceneCodecProbe = {
+export type ClipCodecProbe = {
   /** Codec id from Mediabunny's `getCodec()`, e.g. `'avc'`. */
   codec: string | null;
   /** Hex of the decoder config description (SPS/PPS); `''` when absent. */
@@ -21,11 +21,11 @@ export type SceneCodecProbe = {
 };
 
 /**
- * True when every probed scene is AVC with the same non-empty decoder config,
+ * True when every probed clip is AVC with the same non-empty decoder config,
  * so packets can be concatenated as-is. Any non-AVC codec, missing/empty
- * decoder config, or config differing from scene 0 forces the re-encode path.
+ * decoder config, or config differing from clip 0 forces the re-encode path.
  */
-export function canTransmuxScenes(probes: SceneCodecProbe[]): boolean {
+export function canTransmuxClips(probes: ClipCodecProbe[]): boolean {
   const first = probes[0];
   if (!first) return false;
   return probes.every(
@@ -38,7 +38,7 @@ export function canTransmuxScenes(probes: SceneCodecProbe[]): boolean {
 
 /**
  * Hex-encode a `VideoDecoderConfig`'s `description` (the avcC box / SPS+PPS)
- * for cheap byte-identity comparison across scenes. Returns `''` when the
+ * for cheap byte-identity comparison across clips. Returns `''` when the
  * config has no usable description. Respects `byteOffset`/`byteLength` on
  * typed-array views — reading the whole underlying buffer would make two
  * distinct configs compare equal.

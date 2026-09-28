@@ -10,7 +10,7 @@ import {
   describeResolutions,
   detectMixedAspectRatios,
   detectMixedResolutions,
-  type SceneDimensions,
+  type ClipDimensions,
 } from './resolution';
 
 describe('computeTargetResolution', () => {
@@ -18,15 +18,15 @@ describe('computeTargetResolution', () => {
     expect(() => computeTargetResolution([])).toThrow();
   });
 
-  test('single scene returns its own (even) dimensions', () => {
+  test('single clip returns its own (even) dimensions', () => {
     expect(computeTargetResolution([{ width: 1920, height: 1080 }])).toEqual({
       width: 1920,
       height: 1080,
     });
   });
 
-  test('uniform scenes return the shared dimensions', () => {
-    const dims: SceneDimensions[] = [
+  test('uniform clips return the shared dimensions', () => {
+    const dims: ClipDimensions[] = [
       { width: 1280, height: 720 },
       { width: 1280, height: 720 },
       { width: 1280, height: 720 },
@@ -34,10 +34,10 @@ describe('computeTargetResolution', () => {
     expect(computeTargetResolution(dims)).toEqual({ width: 1280, height: 720 });
   });
 
-  test('mixed scenes return the bounding box (max width, max height)', () => {
+  test('mixed clips return the bounding box (max width, max height)', () => {
     // The issue example: 1920×1080 + 1280×1280 → 1920×1280 box, so neither
-    // scene is cropped; each is letterboxed into the common target.
-    const dims: SceneDimensions[] = [
+    // clip is cropped; each is letterboxed into the common target.
+    const dims: ClipDimensions[] = [
       { width: 1920, height: 1080 },
       { width: 1280, height: 1280 },
     ];
@@ -63,9 +63,9 @@ describe('computeTargetResolution', () => {
 
   test('portrait + landscape produces a square bounding box', () => {
     // Deliberate contract: mixing orientations yields max(width) × max(height)
-    // — a square target both scenes letterbox into. Surprising (large output,
-    // bars on every scene) but the only option that never crops either axis.
-    const dims: SceneDimensions[] = [
+    // — a square target both clips letterbox into. Surprising (large output,
+    // bars on every clip) but the only option that never crops either axis.
+    const dims: ClipDimensions[] = [
       { width: 1080, height: 1920 },
       { width: 1920, height: 1080 },
     ];
@@ -77,9 +77,9 @@ describe('computeTargetResolution', () => {
 
   test('uniform input is the passthrough fast-path: not mixed, target === shared size', () => {
     // The export's transmux fast path depends on this invariant: when
-    // detectMixedResolutions is false, the target must equal the scenes' own
+    // detectMixedResolutions is false, the target must equal the clips' own
     // size so pinning the CanvasSink to it is a no-op.
-    const dims: SceneDimensions[] = [
+    const dims: ClipDimensions[] = [
       { width: 1920, height: 1080 },
       { width: 1920, height: 1080 },
     ];
@@ -101,7 +101,7 @@ describe('computeTargetResolution', () => {
         { width: 1920, height: 1080 },
         { width: Number.NaN, height: 720 },
       ])
-    ).toThrow(/scene 1/);
+    ).toThrow(/clip 1/);
     expect(() =>
       computeTargetResolution([{ width: 1920, height: -1080 }])
     ).toThrow(/invalid dimensions/);
@@ -112,14 +112,14 @@ describe('computeTargetResolution', () => {
 });
 
 describe('detectMixedAspectRatios', () => {
-  test('empty or single scene is never mixed', () => {
+  test('empty or single clip is never mixed', () => {
     expect(detectMixedAspectRatios([])).toBe(false);
     expect(detectMixedAspectRatios([{ width: 1920, height: 1080 }])).toBe(
       false
     );
   });
 
-  test('same ratio at different sizes is NOT mixed — scenes upscale, no bars', () => {
+  test('same ratio at different sizes is NOT mixed — clips upscale, no bars', () => {
     // The common multi-model case: both 16:9, different pixel counts. Playback
     // fills the frame (no letterboxing), so the UI must not claim bars.
     expect(
@@ -157,12 +157,12 @@ describe('detectMixedAspectRatios', () => {
 });
 
 describe('detectMixedResolutions', () => {
-  test('empty or single scene is never mixed', () => {
+  test('empty or single clip is never mixed', () => {
     expect(detectMixedResolutions([])).toBe(false);
     expect(detectMixedResolutions([{ width: 1920, height: 1080 }])).toBe(false);
   });
 
-  test('identical scenes are not mixed', () => {
+  test('identical clips are not mixed', () => {
     expect(
       detectMixedResolutions([
         { width: 1920, height: 1080 },

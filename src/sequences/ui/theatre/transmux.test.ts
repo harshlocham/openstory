@@ -6,49 +6,49 @@
 
 import { describe, expect, test } from 'vitest';
 import {
-  canTransmuxScenes,
+  canTransmuxClips,
   decoderConfigDescriptionHex,
-  type SceneCodecProbe,
+  type ClipCodecProbe,
 } from './transmux';
 
-const avc = (descriptionHex: string): SceneCodecProbe => ({
+const avc = (descriptionHex: string): ClipCodecProbe => ({
   codec: 'avc',
   descriptionHex,
 });
 
-describe('canTransmuxScenes', () => {
+describe('canTransmuxClips', () => {
   test('no probes is not transmuxable', () => {
-    expect(canTransmuxScenes([])).toBe(false);
+    expect(canTransmuxClips([])).toBe(false);
   });
 
-  test('a single AVC scene with a decoder config is transmuxable', () => {
-    expect(canTransmuxScenes([avc('0142')])).toBe(true);
+  test('a single AVC clip with a decoder config is transmuxable', () => {
+    expect(canTransmuxClips([avc('0142')])).toBe(true);
   });
 
-  test('identical AVC configs across scenes are transmuxable', () => {
-    expect(canTransmuxScenes([avc('0142'), avc('0142'), avc('0142')])).toBe(
+  test('identical AVC configs across clips are transmuxable', () => {
+    expect(canTransmuxClips([avc('0142'), avc('0142'), avc('0142')])).toBe(
       true
     );
   });
 
   test('any non-AVC codec forces re-encode', () => {
     expect(
-      canTransmuxScenes([avc('0142'), { codec: 'vp9', descriptionHex: '0142' }])
+      canTransmuxClips([avc('0142'), { codec: 'vp9', descriptionHex: '0142' }])
     ).toBe(false);
     expect(
-      canTransmuxScenes([avc('0142'), { codec: null, descriptionHex: '0142' }])
+      canTransmuxClips([avc('0142'), { codec: null, descriptionHex: '0142' }])
     ).toBe(false);
   });
 
   test('a missing decoder config forces re-encode', () => {
-    expect(canTransmuxScenes([avc('0142'), avc('')])).toBe(false);
-    // Even when it's the only scene — no SPS/PPS means no safe concatenation.
-    expect(canTransmuxScenes([avc('')])).toBe(false);
+    expect(canTransmuxClips([avc('0142'), avc('')])).toBe(false);
+    // Even when it's the only clip — no SPS/PPS means no safe concatenation.
+    expect(canTransmuxClips([avc('')])).toBe(false);
   });
 
   test('differing decoder configs force re-encode', () => {
     // The #791 case: same codec, different SPS (resolution baked in).
-    expect(canTransmuxScenes([avc('0142'), avc('0143')])).toBe(false);
+    expect(canTransmuxClips([avc('0142'), avc('0143')])).toBe(false);
   });
 });
 

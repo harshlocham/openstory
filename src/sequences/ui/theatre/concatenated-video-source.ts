@@ -33,12 +33,12 @@ import {
   describeResolutions,
   detectMixedAspectRatios,
   detectMixedResolutions,
-  type SceneDimensions,
+  type ClipDimensions,
 } from './resolution';
 import {
-  canTransmuxScenes,
+  canTransmuxClips,
   decoderConfigDescriptionHex,
-  type SceneCodecProbe,
+  type ClipCodecProbe,
 } from './transmux';
 
 import { getLogger } from '@/platform/logger';
@@ -76,7 +76,7 @@ export type ConcatenatedVideoMeta = {
   displayWidth: number;
   displayHeight: number;
   /** Per-clip native dimensions, in order. */
-  clipDimensions: SceneDimensions[];
+  clipDimensions: ClipDimensions[];
   /**
    * True when the clips resolve to more than one distinct native resolution —
    * the models disagree on pixel dimensions, so the output is normalized and
@@ -121,8 +121,8 @@ type OpenedClip = {
   image: StillFrame | null;
   audioTracks: { track: InputAudioTrack; offset: number }[];
   duration: number;
-  dimensions: SceneDimensions;
-  codecProbe: SceneCodecProbe | null;
+  dimensions: ClipDimensions;
+  codecProbe: ClipCodecProbe | null;
 };
 
 function closeStill(image: StillFrame | null): void {
@@ -187,7 +187,7 @@ export class ConcatenatedVideoSource {
     const audioTracks = opened.map((o) => o.audioTracks);
     const clipDurationsSeconds = opened.map((o) => o.duration);
     const clipDimensions = opened.map((o) => o.dimensions);
-    // Codec + decoder-config probes, fed to `canTransmuxScenes()` to decide
+    // Codec + decoder-config probes, fed to `canTransmuxClips()` to decide
     // the fast transmux path vs. decode→re-encode.
     const codecProbes = opened.flatMap((o) =>
       o.codecProbe ? [o.codecProbe] : []
@@ -226,7 +226,7 @@ export class ConcatenatedVideoSource {
         ? describeResolutions(videoDimensions)
         : '',
       canTransmux:
-        codecProbes.length === opened.length && canTransmuxScenes(codecProbes),
+        codecProbes.length === opened.length && canTransmuxClips(codecProbes),
     };
     return this.meta;
   }
@@ -364,12 +364,12 @@ export class ConcatenatedVideoSource {
     }
 
     // Probe transmux-safety inputs; the verdict is computed once in `prepare()`
-    // after every clip is open (see `canTransmuxScenes`) and stored on
+    // after every clip is open (see `canTransmuxClips`) and stored on
     // `meta.canTransmux`.
     const codec = await videoTrack.getCodec();
     const decoderConfig =
       codec === 'avc' ? await videoTrack.getDecoderConfig() : null;
-    const codecProbe: SceneCodecProbe = {
+    const codecProbe: ClipCodecProbe = {
       codec,
       descriptionHex: decoderConfig
         ? decoderConfigDescriptionHex(decoderConfig)
